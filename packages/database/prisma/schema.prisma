@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  avatar    String?
+  createdAt DateTime @default(now())
+  
+  // Relations
+  messages  Message[]
+  sessions  Session[]
+}
+
+model Channel {
+  id        String    @id @default(cuid())
+  // DIRECT Channels need optional name
+  name      String? 
+  type      ChannelType
+  createdAt DateTime  @default(now())
+
+  messages  Message[]
+  members   ChannelMember[]
+}
+
+enum ChannelType {
+  DIRECT
+  GROUP
+  PUBLIC
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  channelId String
+  userId    String
+  
+  createdAt DateTime @default(now())  
+  updatedAt DateTime @updatedAt
+
+  edited    Boolean  @default(false)
+  deleted   Boolean  @default(false)
+
+  
+  channel   Channel  @relation(fields: [channelId], references: [id],  onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id],  onDelete: Cascade)
+  
+  @@index([channelId, createdAt, id])
+  @@index([userId])
+
+}
+
+model ChannelMember {
+  id        String   @id @default(cuid())
+  channelId String
+  userId    String
+  role      MemberRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  
+  @@unique([channelId, userId])
+  @@index([userId])
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  connectionId String   @unique
+  status       SessionStatus @default(ONLINE)
+  lastSeenAt   DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id])
+  
+  @@index([userId, status])
+}
+
+enum SessionStatus {
+  ONLINE
+  OFFLINE
+  AWAY
+}
