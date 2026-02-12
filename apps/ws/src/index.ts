@@ -6,7 +6,7 @@ const wss = new WebSocketServer({ port: 8080 });
 
 const userConnections = new Map<string, WebSocket>();
 
-// Firrst saves to DB and then broadcasts
+// First saves to DB and then broadcasts
 async function handleSendMessage(payload: any) {
   const { channelId, content, userId } = payload;
 
