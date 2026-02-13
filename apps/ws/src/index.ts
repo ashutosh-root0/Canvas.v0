@@ -105,7 +105,7 @@ wss.on('connection', async function connection(ws) {
 
       switch (parsedData.type) {
 
-case 'IDENTIFY': {
+      case 'IDENTIFY': {
           const { userId } = parsedData.payload;
           
           // 1. Basic format check

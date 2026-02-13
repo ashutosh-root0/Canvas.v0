@@ -16,6 +16,7 @@ app.get("/", async (req, res) => {
   res.json({ message: "Hello World" , user });
 });
 
+//TODODO : Add slug logic in the schema and here
 
 // CREATE USER
 app.post("/createuser", async (req, res) => {
@@ -128,6 +129,59 @@ app.post("/createchannel", async (req, res) => {
     res.json(newGroup);
   } catch (e) {
     res.status(500).json({ error: "Failed to create channel" });
+  }
+});
+
+// YET TO TEST
+// JOIN CHANNEL: Adds a user to an existing PUBLIC or GROUP channel
+app.post("/joinchannel", async (req, res) => {
+  const { channelId, userId } = req.body;
+
+  if (!channelId || !userId) {
+    return res.status(400).json({ error: "Channel ID and User ID are required" });
+  }
+
+  try {
+    // 1. Check if the channel exists and its type
+    const channel = await prisma.channel.findUnique({
+      where: { id: channelId },
+    });
+
+    if (!channel) {
+      return res.status(404).json({ error: "Channel not found" });
+    }
+
+    // 2. Prevent joining DIRECT channels via this route (those are private)
+    if (channel.type === "DIRECT") {
+      return res.status(403).json({ error: "Cannot manually join a Direct Message" });
+    }
+
+    // 3. Create the membership
+    const membership = await prisma.channelMember.create({
+      data: {
+        channelId,
+        userId,
+        role: "MEMBER", // Default role for joining
+      },
+      // Include channel details so frontend can update the UI immediately
+      include: {
+        channel: true 
+      }
+    });
+
+    res.json({
+      message: "Successfully joined the channel",
+      membership
+    });
+
+  } catch (e: any) {
+    // Unique constraint violations if the user is ALREADY in the channel
+    if (e.code === 'P2002') {
+      return res.status(409).json({ error: "User is already a member of this channel" });
+    }
+    
+    console.error(e);
+    res.status(500).json({ error: "Failed to join channel" });
   }
 });
 
