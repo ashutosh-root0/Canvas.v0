@@ -240,6 +240,27 @@ app.get('/users/:userId/channels', async (req, res) => {
 });
 
 // YET TO TEST
+// LEAVE CHANNEL
+app.delete("/channels/:channelId/members", async (req, res) => {
+  const { channelId } = req.params;
+  const { userId } = req.body; // Get this from the session/token
+
+  try {
+    await prisma.channelMember.delete({
+      where: {
+        channelId_userId: {
+          channelId,
+          userId
+        }
+      }
+    });
+    res.json({ message: "Left channel successfully" });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to leave channel" });
+  }
+});
+
+// YET TO TEST
 // GET MESSAGES: Latest 50 messages for a specific chat in desc order
 app.get('/channels/:channelId/messages', async (req, res) => {
   const { channelId } = req.params;
